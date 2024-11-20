@@ -165,3 +165,4 @@ nohup.out
 .vscode
 ./docker/sui/genesis/files/
 ./docker/sui/genesis/files/.venv
+*.code-workspace
