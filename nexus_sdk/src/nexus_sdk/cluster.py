@@ -9,11 +9,22 @@ import traceback
 GAS_BUDGET = 1000000000
 
 
-# Creates an empty cluster object to which agents and tasks can be added.
-# See functions [create_agent_for_cluster] and [create_task].
-#
-# Returns the cluster ID and the cluster owner capability ID.
 def create_cluster(client, package_id, name, description, gas_budget=GAS_BUDGET):
+    """
+    Creates an empty cluster object to which agents and tasks can be added.
+    See functions [create_agent_for_cluster] and [create_task].
+
+    Args:
+        client: The Sui client to use
+        package_id: The ID of the package containing the "cluster" module
+        name: The name of the cluster
+        description: A description of the cluster
+        gas_budget: The gas budget for the transaction (default = 1 SUI)
+
+    Returns:
+        A tuple containing the cluster ID and the cluster owner capability ID, or None if the
+        transaction failed.
+    """
     txn = SuiTransaction(client=client)
 
     try:
@@ -38,9 +49,6 @@ def create_cluster(client, package_id, name, description, gas_budget=GAS_BUDGET)
         return None
 
 
-# Creates a new agent for the given cluster.
-# This means that the agent does not live on-chain as a standalone object that
-# other clusters could reference.
 def create_agent_for_cluster(
     client,
     package_id,
@@ -54,6 +62,24 @@ def create_agent_for_cluster(
     backstory,
     gas_budget=GAS_BUDGET,
 ):
+    """
+    Creates a new agent for the given cluster.
+    This means that the agent does not live on-chain as a standalone object that
+    other clusters could reference.
+
+    :param client: The Sui client to use
+    :param package_id: The ID of the package containing the "cluster" module
+    :param cluster_id: The ID of the cluster to which the agent should be added
+    :param cluster_owner_cap_id: The ID of the capability that owns the cluster
+    :param model_id: The ID of the model to be used by the agent
+    :param model_owner_cap_id: The ID of the capability that owns the model
+    :param name: The name of the agent
+    :param role: The role of the agent
+    :param goal: The goal of the agent
+    :param backstory: The backstory of the agent
+    :param gas_budget: The gas budget for the transaction
+    :return: True if the agent was successfully created, False otherwise
+    """
     txn = SuiTransaction(client=client)
 
     try:
@@ -80,8 +106,6 @@ def create_agent_for_cluster(
         return False
 
 
-# Creates a new task for the given cluster.
-# Each task must be executed by an agent that is part of the cluster.
 def create_task(
     client,
     package_id,
@@ -95,6 +119,26 @@ def create_task(
     context,
     gas_budget=GAS_BUDGET,
 ):
+    """
+    Creates a new task for the given cluster.
+    Each task must be executed by an agent that is part of the cluster.
+
+    Args:
+        client: The Sui client to use
+        package_id: The ID of the package containing the "cluster" module
+        cluster_id: The ID of the cluster to which the agent should be added
+        cluster_owner_cap_id: The ID of the capability that owns the cluster
+        name: The name of the task
+        agent_name: The name of the agent that should execute the task
+        description: A description of the task
+        expected_output: The expected output of the task
+        prompt: The prompt to be given to the agent
+        context: The context to be given to the agent
+        gas_budget: The gas budget for the transaction
+
+    Returns:
+        True if the task was successfully created, False otherwise
+    """
     txn = SuiTransaction(client=client)
 
     try:
@@ -121,10 +165,6 @@ def create_task(
         return False
 
 
-# Begins execution of a cluster.
-# Returns the cluster execution ID.
-# Use the function [get_cluster_execution_response] to fetch the response of the execution
-# in a blocking manner.
 def execute_cluster(
     client,
     package_id,
@@ -132,6 +172,18 @@ def execute_cluster(
     input,
     gas_budget=GAS_BUDGET,
 ):
+    """
+    Begins execution of a cluster.
+    Use the function [get_cluster_execution_response] to fetch the response of the execution
+    in a blocking manner.
+    :param client: The Sui client to use
+    :param package_id: The ID of the package containing the "cluster" module
+    :param cluster_id: The ID of the cluster to be executed
+    :param input: The input to be given to the cluster
+    :param gas_budget: The gas budget for the transaction (default = 1 SUI)
+
+    :return: The cluster execution ID, or None if the transaction failed.
+    """
     txn = SuiTransaction(client=client)
 
     try:
@@ -169,11 +221,21 @@ def execute_cluster(
         return None
 
 
-# Fetches the response of a cluster execution.
-# If the execution is not complete within the specified time, the function returns a timeout message.
 def get_cluster_execution_response(
     client, execution_id, max_wait_time_s=180, check_interval_s=5
 ):
+    """
+    Fetches the response of a cluster execution.
+    If the execution is not complete within the specified time, the function returns a timeout message.
+    Args:
+        client: The Sui client to use
+        execution_id: The ID of the cluster execution to be fetched
+        max_wait_time_s: The maximum time to wait for the execution to complete in seconds (default = 180)
+        check_interval_s: The interval to check the status of the execution in seconds (default = 5)
+
+    Returns:
+        The response of the cluster execution, or a message indicating the reason for failure.
+    """
     start_time = time.time()
     while time.time() - start_time < max_wait_time_s:
         try:

@@ -2,9 +2,20 @@ from pysui.sui.sui_txn.sync_transaction import SuiTransaction
 from pysui.sui.sui_types.scalars import SuiU64
 
 
-# Creates a new node owned object.
-# Returns the node ID.
 def create_node(client, package_id, name, node_type, gpu_memory):
+    """
+    Creates a new node owned object.
+
+    Args:
+        client (SuiClient): A Sui client.
+        package_id (str): The ID of the package containing the node module.
+        name (str): The name of the node.
+        node_type (str): The type of the node.
+        gpu_memory (int): The amount of GPU memory in MB required by the node.
+
+    Returns:
+        str: The ID of the created node object.
+    """
     txn = SuiTransaction(client=client)
 
     result = txn.move_call(

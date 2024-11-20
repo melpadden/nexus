@@ -4,8 +4,6 @@ from pysui.sui.sui_types.collections import SuiArray
 import ast
 
 
-# Creates a new on-chain model object.
-# Returns the model ID and the model owner capability ID.
 def create_model(
     client,
     package_id,
@@ -24,6 +22,28 @@ def create_model(
     is_open_source,
     datasets,
 ):
+    """
+    Creates a new on-chain model object.
+    Returns the model ID and the model owner capability ID.
+
+    Parameters:
+        client (SuiClient): The Sui client to use for the transaction.
+        package_id (str): The ID of the package containing the `model` module.
+        node_id (str): The ID of the node object where the model should be stored.
+        name (str): The name of the model.
+        model_hash (bytes): The hash of the model file.
+        url (str): The URL where the model can be downloaded.
+        token_price (int): The price of the model in tokens.
+        capacity (int): The capacity of the model (i.e. the number of predictions it can make).
+        num_params (int): The number of parameters in the model.
+        description (str): A description of the model.
+        max_context_length (int): The maximum length of the context that can be passed to the model.
+        is_fine_tuned (bool): Whether the model is fine-tuned.
+        family (str): The family of the model (e.g. BERT, RoBERTa, etc.).
+        vendor (str): The vendor of the model (e.g. Hugging Face, PyTorch, etc.).
+        is_open_source (bool): Whether the model is open-source.
+        datasets (list[str]): The datasets that the model was trained on.
+    """
     txn = SuiTransaction(client=client)
 
     args = [
