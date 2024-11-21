@@ -4,11 +4,12 @@ import subprocess
 import json
 import argparse
 from pathlib import Path
-from cli_cluster import run_cli_cluster_example
 from colorama import init as colorama_init
-from ig_post_planner import run_ig_post_planner_example
-from trip_planner import run_trip_planner_example
 from nexus_sdk import get_sui_client
+from ig_post_planner import run_ig_post_planner_example
+from cli_cluster import run_cli_cluster_example
+from trip_planner import run_trip_planner_example
+from token_researcher import run_token_researcher_example
 
 # We know that this script is located in the ./examples directory, so we go
 # one level up to get the root directory of the repository
@@ -29,6 +30,7 @@ EXAMPLES = {
     "trip_planner": run_trip_planner_example,
     "ig_post_planner": run_ig_post_planner_example,
     "cli_cluster": run_cli_cluster_example,
+    "token_researcher": run_token_researcher_example,
 }
 
 
@@ -97,7 +99,7 @@ def main():
     )
     parser.add_argument(
         "example_name",
-        help="The name of the example to run. Available examples: trip_planner, ig_post_planner, cli_cluster",
+        help="The name of the example to run. Available examples: trip_planner, ig_post_planner, cli_cluster, token_researcher",
     )
     args = parser.parse_args()
 

@@ -166,3 +166,6 @@ nohup.out
 ./docker/sui/genesis/files/
 ./docker/sui/genesis/files/.venv
 *.code-workspace
+
+# naming convention for all venv directories
+*v_*/
