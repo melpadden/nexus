@@ -40,3 +40,8 @@ token-researcher:
 prompt:
     @__import__('os').system("just containers check")
     @__import__('os').system("docker exec -it examples /bin/bash -c \"source .venv/bin/activate && python examples/main.py prompt_task\"")
+
+[no-cd]
+site-scraper:
+    @__import__('os').system("just containers check")
+    @__import__('os').system("docker exec -it examples /bin/bash -c \"source .venv/bin/activate && python examples/main.py site_scraper\"")

@@ -1,9 +1,6 @@
-# Use [run_trip_planner_example] to run the Trip Planner example.
-# It's a blocking function that takes a client and package ID as arguments
-# and then prompts the user for input to describe their trip details.
-
 import textwrap
 from colorama import Fore, Style
+from utils import paginate_output
 from nexus_sdk import (
     create_cluster,
     create_agent_for_cluster,
@@ -12,7 +9,10 @@ from nexus_sdk import (
     get_cluster_execution_response,
 )
 
-# USe a tool to complete a task
+from pysui.sui.sui_txn.sync_transaction import SuiTransaction
+from pysui.sui.sui_types.scalars import ObjectID, SuiString
+from pysui.sui.sui_types.collections import SuiArray
+
 class SiteScraper:
     def __init__(
         self,
@@ -34,8 +34,8 @@ class SiteScraper:
         cluster_id, cluster_owner_cap_id = create_cluster(
             self.client,
             self.package_id,
-            "Trip Planning Cluster",
-            "A cluster for planning the perfect trip",
+            "Site Scraping Cluster",
+            "A cluster for scraping websites",
         )
         return cluster_id, cluster_owner_cap_id
 
@@ -43,19 +43,9 @@ class SiteScraper:
         # Create agents (assuming we have model_ids and model_owner_cap_ids)
         agent_configs = [
             (
-                "city_selector",
-                "City Selection Expert",
-                "Select the best city based on weather, season, and prices",
-            ),
-            (
-                "local_expert",
-                "Local Expert",
-                "Provide the BEST insights about the selected city",
-            ),
-            (
-                "travel_concierge",
-                "Travel Concierge",
-                "Create amazing travel itineraries with budget and packing suggestions",
+                "site_scraper",
+                "Site Scraping Agent",
+                "Scrape the selected website and summarize its content",
             ),
         ]
 
@@ -70,55 +60,16 @@ class SiteScraper:
                 agent_name,
                 role,
                 goal,
-                f"An AI agent specialized in {role.lower()} for trip planning.",
+                f"An AI agent specialized in {role.lower()}.",
             )
 
     def setup_tasks(self, cluster_id, cluster_owner_cap_id):
         tasks = [
             (
-                "identify_city",
-                "city_selector",
+                "scrape_site",
+                "site_scraper",
                 f"""
-                Analyze and select the best city for the trip based on specific criteria.
-                Consider weather patterns, seasonal events, and travel costs.
-                Compare multiple cities, factoring in current weather conditions,
-                upcoming events, and overall travel expenses.
-                Provide a detailed report on the chosen city, including flight costs,
-                weather forecast, and attractions.
-                Origin: {self.origin}
-                City Options: {self.cities}
-                Trip Date: {self.date_range}
-                Traveler Interests: {self.interests}
-            """,
-            ),
-            (
-                "gather_info",
-                "local_expert",
-                f"""
-                As a local expert, compile an in-depth guide for the selected city.
-                Include key attractions, local customs, special events, and daily activity recommendations.
-                Highlight hidden gems and local favorites.
-                Provide a comprehensive overview of the city's offerings, including cultural insights,
-                must-visit landmarks, weather forecasts, and high-level costs.
-                Trip Date: {self.date_range}
-                Traveling from: {self.origin}
-                Traveler Interests: {self.interests}
-            """,
-            ),
-            (
-                "plan_itinerary",
-                "travel_concierge",
-                f"""
-                Create a full 7-day travel itinerary with detailed per-day plans.
-                Include weather forecasts, places to eat, packing suggestions, and a budget breakdown.
-                Suggest specific places to visit, hotels to stay at, and restaurants to try.
-                Cover all aspects of the trip from arrival to departure.
-                Format the plan as markdown, including a daily schedule, anticipated weather conditions,
-                recommended clothing and items to pack, and a detailed budget.
-                Explain why each place was chosen and what makes them special.
-                Trip Date: {self.date_range}
-                Traveling from: {self.origin}
-                Traveler Interests: {self.interests}
+                Scrape and summarize the following site: {self.url}
             """,
             ),
         ]
@@ -133,7 +84,7 @@ class SiteScraper:
                 task_name,
                 agent_id,
                 description,
-                f"Complete {task_name} for trip planning",
+                f"Complete {task_name} ",
                 description,
                 "",  # No specific context provided in this example
             )
@@ -141,19 +92,77 @@ class SiteScraper:
 
         return task_ids
 
+
+    def setup_tools(self, cluster_id, cluster_owner_cap_id):
+        tools = [
+            (
+                "scrape_site",  # task_name
+                "browser", # tool_name
+                # tool_args
+                f"""
+                url: {self.url}
+            """,
+            ),
+
+        ]
+        for task_name, tool_name, tool_args in tools:
+            self.attach_tool_to_task(
+                cluster_id=cluster_id,
+                cluster_owner_cap_id=cluster_owner_cap_id,
+                task_name=task_name,
+                tool_name=tool_name,
+                tool_args=tool_args,
+            )
+
+    def attach_tool_to_task(
+        self,
+        cluster_id,
+        cluster_owner_cap_id,
+        task_name,
+        tool_name,
+        tool_args,
+    ):
+        txn = SuiTransaction(client=self.client)
+
+        try:
+            result = txn.move_call(
+                target=f"{self.package_id}::cluster::attach_tool_to_task_entry",
+                arguments=[
+                    ObjectID(cluster_id),
+                    ObjectID(cluster_owner_cap_id),
+                    SuiString(task_name),
+                    SuiString(tool_name),
+                    SuiArray([SuiString(arg) for arg in tool_args]),
+                ],
+            )
+        except Exception as e:
+            print(f"Error in attach_task_to_tool: {e}")
+            return None
+
+        result = txn.execute(gas_budget=10000000)
+
+        if result.is_ok():
+            if result.result_data.effects.status.status == "success":
+                print(f"Task attached to Tool")
+                return True
+            else:
+                error_message = result.result_data.effects.status.error
+                print(f"Transaction failed: {error_message}")
+                return None
+        return None
+
     def run(self):
         cluster_id, cluster_owner_cap_id = self.setup_cluster()
         self.setup_agents(cluster_id, cluster_owner_cap_id)
         self.setup_tasks(cluster_id, cluster_owner_cap_id)
+        self.setup_tools(cluster_id, cluster_owner_cap_id)
 
         execution_id = execute_cluster(
             self.client,
             self.package_id,
             cluster_id,
             f"""
-            Plan a trip from {self.origin} to one of these cities: {self.cities}.
-            Travel dates: {self.date_range}
-            Traveler interests: {self.interests}
+            Site Scraper: Url: {self.url}
         """,
         )
 
@@ -164,53 +173,26 @@ class SiteScraper:
         return get_cluster_execution_response(self.client, execution_id, 600)
 
 
-# Runs the Trip Planner example using the provided Nexus package ID.
-def run_trip_planner_example(client, package_id, model_id, mode_owner_cap):
-    print(f"{Fore.CYAN}## Welcome to Trip Planner using Nexus{Style.RESET_ALL}")
+def run_site_summary_example(client, package_id, model_id, mode_owner_cap):
+    print(f"{Fore.CYAN}## Welcome to Site Scraper using Nexus{Style.RESET_ALL}")
     print(f"{Fore.YELLOW}-------------------------------{Style.RESET_ALL}")
 
-    origin = input(f"{Fore.GREEN}Where will you be traveling from? {Style.RESET_ALL}")
-    cities = input(
-        f"{Fore.GREEN}Which cities are you interested in visiting? {Style.RESET_ALL}"
-    )
-    date_range = input(
-        f"{Fore.GREEN}What is your preferred date range for travel? {Style.RESET_ALL}"
-    )
-    interests = input(
-        f"{Fore.GREEN}What are your main interests or hobbies? {Style.RESET_ALL}"
-    )
+    url = input(f"{Fore.GREEN}What is the URL to be summarized? {Style.RESET_ALL}")
 
-    planner = TripPlanner(
+    runner = SiteScraper(
         client,
         package_id,
         model_id,
         mode_owner_cap,
-        origin,
-        cities,
-        date_range,
-        interests,
+        url
     )
 
     print()
-    result = planner.run()
+    result = runner.run()
 
     print(f"\n\n{Fore.CYAN}########################{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}## Here is your Trip Plan{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}## Results {Style.RESET_ALL}")
     print(f"{Fore.CYAN}########################\n{Style.RESET_ALL}")
 
     paginate_output(result)
 
-
-# Helper function to paginate the result output
-def paginate_output(text, width=80):
-    lines = text.split("\n")
-
-    for i, line in enumerate(lines, 1):
-        wrapped_line = textwrap.fill(line, width)
-        print(wrapped_line)
-
-        # It's nice when this equals the number of lines in the terminal, using
-        # default value 32 for now.
-        pause_every_n_lines = 32
-        if i % pause_every_n_lines == 0:
-            input(f"{Fore.YELLOW}-- Press Enter to continue --{Style.RESET_ALL}")
