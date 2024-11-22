@@ -119,6 +119,7 @@ class CliCluster:
             )
 
     def setup_tools(self, cluster_id, cluster_owner_cap_id):
+
         for tool in self.tools:
             self.attach_tool_to_task(
                 cluster_id=cluster_id,
@@ -169,6 +170,7 @@ class CliCluster:
         cluster_id, cluster_owner_cap_id = self.setup_cluster()
         self.setup_agents(cluster_id, cluster_owner_cap_id)
         self.setup_tasks(cluster_id, cluster_owner_cap_id)
+        self.setup_tools(cluster_id, cluster_owner_cap_id)
 
         execution_id = execute_cluster(
             self.client,

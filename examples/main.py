@@ -10,6 +10,7 @@ from ig_post_planner import run_ig_post_planner_example
 from cli_cluster import run_cli_cluster_example
 from trip_planner import run_trip_planner_example
 from token_researcher import run_token_researcher_example
+from prompt_task import run_prompt_task_example
 
 # We know that this script is located in the ./examples directory, so we go
 # one level up to get the root directory of the repository
@@ -31,6 +32,7 @@ EXAMPLES = {
     "ig_post_planner": run_ig_post_planner_example,
     "cli_cluster": run_cli_cluster_example,
     "token_researcher": run_token_researcher_example,
+    "prompt_task": run_prompt_task_example,
 }
 
 

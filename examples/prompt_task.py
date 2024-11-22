@@ -1,6 +1,6 @@
-# Use [run_token_researcher_example] to run the example.
-# It takes a token symbol as argument
-# and then gives the user details about the token's characteristics
+# Use [run_task] to run the example.
+# It runs the simplest possible task that can be executed
+# and then prints the output
 
 import textwrap
 from colorama import Fore, Style
@@ -13,29 +13,33 @@ from nexus_sdk import (
 )
 from utils import paginate_output
 
-class TokenResearcher:
+class TaskRunner:
     def __init__(
         self,
         client,
         package_id,
         model_id,
         model_owner_cap_id,
-        token_symbol
+        task_name,
+        purpose,
+        instructions
     ):
         self.client = client
         self.package_id = package_id
         self.model_id = model_id
         self.model_owner_cap_id = model_owner_cap_id
 
-        self.token_symbol = token_symbol
+        self.purpose = purpose
+        self.instructions = instructions
+        self.task_name = task_name
 
     def setup_cluster(self):
         # Create a cluster (equivalent to Crew in CrewAI)
         cluster_id, cluster_owner_cap_id = create_cluster(
             self.client,
             self.package_id,
-            "Token Researching Cluster",
-            "A cluster for analyzing the value of a token",
+            "Task Running Cluster",
+            "A cluster for Running a simple task",
         )
         return cluster_id, cluster_owner_cap_id
 
@@ -43,15 +47,10 @@ class TokenResearcher:
         # Create agents (assuming we have model_ids and model_owner_cap_ids)
         agent_configs = [
             (
-                "token_stats",
-                "Token Statistics Agent",
-                "Analyze and select the statistics for the token to be researched. Retrieve the statistics from https://tokenterminal.com/explorer.",
+                "task_runner",
+                "Task Runner",
+                self.purpose,
             ),
-            (
-                "token_info",
-                "Token Info Agent",
-                "Retrieve general information about the token.",
-            )
         ]
 
         for agent_name, role, goal in agent_configs:
@@ -65,26 +64,16 @@ class TokenResearcher:
                 agent_name,
                 role,
                 goal,
-                f"An AI agent specialized in {role.lower()} for token research.",
+                f"An AI agent specialized in {role.lower()}.",
             )
 
     def setup_tasks(self, cluster_id, cluster_owner_cap_id):
         tasks = [
             (
-                "get_statistics", # task name
-                "token_stats", # agent id
+                "task_name", # task name
+                "task_runner", # agent id
                 f"""
-                Analyze and select the statistics for the token to be researched.
-                Retrieve the statistics of the token from https://tokenterminal.com/explorer.
-                Token: {self.token_symbol}
-            """,
-            ),
-            (
-                "gather_info",
-                "token_info",
-                f"""
-                Retrieve general publicly available information about the token.
-                Token: {self.token_symbol}
+                {self.instructions}
             """,
             ),
         ]
@@ -99,7 +88,7 @@ class TokenResearcher:
                 task_name,
                 agent_id,
                 description,
-                f"Complete {task_name} for token research",
+                f"Complete {task_name} task.",
                 description,
                 "",  # No specific context provided in this example
             )
@@ -117,7 +106,7 @@ class TokenResearcher:
             self.package_id,
             cluster_id,
             f"""
-            Get research about this token: {self.token_symbol}.
+            Execute this task: {self.task_name}.
         """,
         )
 
@@ -128,26 +117,30 @@ class TokenResearcher:
         return get_cluster_execution_response(self.client, execution_id, 600)
 
 
-# Runs the example using the provided Nexus package ID.
-def run_token_researcher_example(client, package_id, model_id, mode_owner_cap):
-    print(f"{Fore.CYAN}## Welcome to Token  Planner using Nexus{Style.RESET_ALL}")
+# Runs the Task Runner example using the provided Nexus package ID.
+def run_prompt_task_example(client, package_id, model_id, mode_owner_cap):
+    print(f"{Fore.CYAN}## Welcome to Task Runner using Nexus{Style.RESET_ALL}")
     print(f"{Fore.YELLOW}-------------------------------{Style.RESET_ALL}")
 
-    token = input(f"{Fore.GREEN}Which token would you like to research? {Style.RESET_ALL}")
+    task_name = input(f"{Fore.GREEN}Enter a short name for the task {Style.RESET_ALL}")
+    purpose = input(f"{Fore.GREEN}Enter a purpose for the task {Style.RESET_ALL}")
+    instructions = input(f"{Fore.GREEN}Enter the instructions for the task {Style.RESET_ALL}")
 
-    researcher = TokenResearcher(
+    runner = TaskRunner(
         client,
         package_id,
         model_id,
         mode_owner_cap,
-        token,
+        task_name,
+        purpose,
+        instructions
     )
 
     print()
-    result = researcher.run()
+    result = runner.run()
 
     print(f"\n\n{Fore.CYAN}########################{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}## Here is your Token Research {Style.RESET_ALL}")
+    print(f"{Fore.CYAN}## Here is your output {Style.RESET_ALL}")
     print(f"{Fore.CYAN}########################\n{Style.RESET_ALL}")
 
     paginate_output(result)
