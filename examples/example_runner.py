@@ -7,6 +7,8 @@ from pysui.sui.sui_types.collections import SuiArray
 class ExampleRunner:
     """_summary_
         Encapsulates some resusable logic for running examples.
+        Basically a dupe of the logic in cli_cluster.py with some additions
+        In a classic OO language this would probably be a base class but I prefer compositional patterns in Python
     """
     def __init__(
         self,

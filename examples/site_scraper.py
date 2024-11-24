@@ -3,19 +3,12 @@ from colorama import Fore, Style
 from example_runner import ExampleRunner
 
 from utils import paginate_output
-from nexus_sdk import (
-    create_cluster,
-    create_agent_for_cluster,
-    create_task,
-    execute_cluster,
-    get_cluster_execution_response,
-)
-
-from pysui.sui.sui_txn.sync_transaction import SuiTransaction
-from pysui.sui.sui_types.scalars import ObjectID, SuiString
-from pysui.sui.sui_types.collections import SuiArray
 
 class SiteScraper:
+    """_summary_
+        Represents an example of configuring and calling a SiteScraper using Nexus.
+
+    """
     def __init__(
         self,
         client,
@@ -24,6 +17,22 @@ class SiteScraper:
         model_owner_cap_id,
         url,
     ):
+        """
+        Create a SiteScraper object.
+
+        Parameters
+        ----------
+        client : pysui.sui.sui_client.SuiClient
+            The Sui client to use.
+        package_id : ObjectID
+            The ID of the package containing the "cluster" module.
+        model_id : ObjectID
+            The ID of the model.
+        model_owner_cap_id : ObjectID
+            The ID of the capability that owns the model.
+        url : str
+            The URL to be summarized.
+        """
         self.example_runner = ExampleRunner(client, package_id, model_id, model_owner_cap_id)
         self.url = url
 

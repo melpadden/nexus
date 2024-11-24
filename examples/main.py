@@ -33,7 +33,7 @@ EXAMPLES = {
     "ig_post_planner": run_ig_post_planner_example,
     "cli_cluster": run_cli_cluster_example,
     "token_researcher": run_token_researcher_example,
-    "prompt_task": run_prompt_task_example,
+    "prompt": run_prompt_task_example,
     "site_scraper": run_site_summary_example,
 }
 
