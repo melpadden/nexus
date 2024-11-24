@@ -38,7 +38,7 @@ class SiteScraper:
     def setup_tasks(self):
         self.example_runner.add_task(
             task_name="scrape_site",
-            agent_id="site_scraper",
+            agent_name="site_scraper",
             description=f"Scrape and summarize the following site: {self.url}")
 
     def setup_tools(self):
@@ -56,13 +56,15 @@ class SiteScraper:
         self.setup_agents()
         self.setup_tasks()
         self.setup_tools()
+        return self.example_runner.execute()
 
-        return self.example_runner.execute(
-            user_input=
-            f"""
-                Execute the task Site Scraper: Url: {self.url}
-            """,
-        )
+
+        # return self.example_runner.execute(
+        #     user_input=
+        #     f"""
+        #         Execute the task site_scraper: Url: {self.url}
+        #     """,
+        # )
 
 
 def run_site_summary_example(client, package_id, model_id, mode_owner_cap):
@@ -71,7 +73,7 @@ def run_site_summary_example(client, package_id, model_id, mode_owner_cap):
 
     url = input(f"{Fore.GREEN}What is the URL to be summarized? {Style.RESET_ALL}")
 
-    runner = SiteScraper(
+    scraper = SiteScraper(
         client,
         package_id,
         model_id,
@@ -80,7 +82,7 @@ def run_site_summary_example(client, package_id, model_id, mode_owner_cap):
     )
 
     print()
-    result = runner.run()
+    result = scraper.run()
 
     print(f"\n\n{Fore.CYAN}########################{Style.RESET_ALL}")
     print(f"{Fore.CYAN}## Results {Style.RESET_ALL}")
