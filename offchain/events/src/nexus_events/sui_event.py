@@ -37,6 +37,8 @@ async def call_use_tool(name, args, url):
     print(f"Calling /tool/use with name: {name}, args: {args}, url: {url}")
 
     try:
+        print(f"call_use_tool, name: {name}, args: {args}, url: {url}")
+
         if name not in TOOLS:
             print(f"Tool '{name}' not found in TOOLS dictionary")
             print(f"Available tools: {list(TOOLS.keys())}")

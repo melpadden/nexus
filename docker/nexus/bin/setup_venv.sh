@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$INSTALL_RUST" = "true" ]; then
-    apt-get update 
+    apt-get update
     apt-get install -y --no-install-recommends curl build-essential
     curl https://sh.rustup.rs -sSf | sh -s -- -y
     . $HOME/.cargo/env

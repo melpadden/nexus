@@ -1,6 +1,9 @@
-from pysui.sui.sui_builders.get_builders import GetObject
-from pysui.sui.sui_txn.sync_transaction import SuiTransaction
-from pysui.sui.sui_types.scalars import ObjectID, SuiString
+
+import pysui.sui.sui_builders.get_builders as sui_builders
+import pysui.sui.sui_txn.sync_transaction as sui_transaction
+import pysui.sui.sui_types.scalars as sui_scalars
+import pysui.sui.sui_types.collections as sui_collections
+
 import time
 import ast
 import traceback
@@ -12,7 +15,7 @@ GAS_BUDGET = 1000000000
 def create_cluster(client, package_id, name, description, gas_budget=GAS_BUDGET):
     """
     Creates an empty cluster object to which agents and tasks can be added.
-    See functions [create_agent_for_cluster] and [create_task].
+    Returns the cluster ID and the cluster owner capability ID
 
     Args:
         client: The Sui client to use
@@ -25,12 +28,12 @@ def create_cluster(client, package_id, name, description, gas_budget=GAS_BUDGET)
         A tuple containing the cluster ID and the cluster owner capability ID, or None if the
         transaction failed.
     """
-    txn = SuiTransaction(client=client)
+    txn = sui_transaction.SuiTransaction(client=client)
 
     try:
         result = txn.move_call(
             target=f"{package_id}::cluster::create",
-            arguments=[SuiString(name), SuiString(description)],
+            arguments=[sui_scalars.SuiString(name), sui_scalars.SuiString(description)],
         )
         result = txn.execute(gas_budget=gas_budget)
         if result.is_ok():
@@ -80,20 +83,20 @@ def create_agent_for_cluster(
     :param gas_budget: The gas budget for the transaction
     :return: True if the agent was successfully created, False otherwise
     """
-    txn = SuiTransaction(client=client)
+    txn = sui_transaction.SuiTransaction(client=client)
 
     try:
         result = txn.move_call(
             target=f"{package_id}::cluster::add_agent_entry",
             arguments=[
-                ObjectID(cluster_id),
-                ObjectID(cluster_owner_cap_id),
-                ObjectID(model_id),
-                ObjectID(model_owner_cap_id),
-                SuiString(name),
-                SuiString(role),
-                SuiString(goal),
-                SuiString(backstory),
+                sui_scalars.ObjectID(cluster_id),
+                sui_scalars.ObjectID(cluster_owner_cap_id),
+                sui_scalars.ObjectID(model_id),
+                sui_scalars.ObjectID(model_owner_cap_id),
+                sui_scalars.SuiString(name),
+                sui_scalars.SuiString(role),
+                sui_scalars.SuiString(goal),
+                sui_scalars.SuiString(backstory),
             ],
         )
         result = txn.execute(gas_budget=gas_budget)
@@ -139,20 +142,20 @@ def create_task(
     Returns:
         True if the task was successfully created, False otherwise
     """
-    txn = SuiTransaction(client=client)
+    txn = sui_transaction.SuiTransaction(client=client)
 
     try:
         result = txn.move_call(
             target=f"{package_id}::cluster::add_task_entry",
             arguments=[
-                ObjectID(cluster_id),
-                ObjectID(cluster_owner_cap_id),
-                SuiString(name),
-                SuiString(agent_name),
-                SuiString(description),
-                SuiString(expected_output),
-                SuiString(prompt),
-                SuiString(context),
+                sui_scalars.ObjectID(cluster_id),
+                sui_scalars.ObjectID(cluster_owner_cap_id),
+                sui_scalars.SuiString(name),
+                sui_scalars.SuiString(agent_name),
+                sui_scalars.SuiString(description),
+                sui_scalars.SuiString(expected_output),
+                sui_scalars.SuiString(prompt),
+                sui_scalars.SuiString(context),
             ],
         )
         result = txn.execute(gas_budget=gas_budget)
@@ -164,6 +167,61 @@ def create_task(
         print(f"Error in create_task: {e}")
         return False
 
+
+def attach_tool_to_task(
+    client,
+    package_id,
+    cluster_id,
+    cluster_owner_cap_id,
+    task_name,
+    tool_name,
+    tool_args,
+):
+    """
+    Attaches a tool to a task in the given cluster.
+
+    Args:
+        client: The Sui client to use
+        package_id: The ID of the package containing the "cluster" module
+        cluster_id: The ID of the cluster to which the agent should be added
+        cluster_owner_cap_id: The ID of the capability that owns the cluster
+        task_name: The name of the task
+        tool_name: The name of the tool
+        tool_args: The arguments to the tool
+
+    Returns:
+        True if the tool was successfully attached to the task, False otherwise
+    """
+    print(f"Attaching Tool {tool_name} to Task {task_name} with args {tool_args}")
+    txn = sui_transaction.SuiTransaction(client=client)
+
+    try:
+        result = txn.move_call(
+            target=f"{package_id}::cluster::attach_tool_to_task_entry",
+            arguments=[
+                sui_scalars.ObjectID(cluster_id),
+                sui_scalars.ObjectID(cluster_owner_cap_id),
+                sui_scalars.SuiString(task_name),
+                sui_scalars.SuiString(tool_name),
+                sui_collections.SuiArray([sui_scalars.SuiString(arg) for arg in tool_args]),
+            ],
+        )
+        print(result)
+    except Exception as e:
+        print(f"Error in attach_task_to_tool: {e}")
+        return None
+
+    result = txn.execute(gas_budget=10000000)
+
+    if result.is_ok():
+        if result.result_data.effects.status.status == "success":
+            print(f"Task {task_name} attached to Tool {tool_name} with args {tool_args}")
+            return True
+        else:
+            error_message = result.result_data.effects.status.error
+            print(f"Transaction failed: {error_message}")
+            return None
+    return None
 
 def execute_cluster(
     client,
@@ -184,12 +242,14 @@ def execute_cluster(
 
     :return: The cluster execution ID, or None if the transaction failed.
     """
-    txn = SuiTransaction(client=client)
+
+    print(f"execute_cluster: {cluster_id} with input: {input}")
+    txn = sui_transaction.SuiTransaction(client=client)
 
     try:
         result = txn.move_call(
             target=f"{package_id}::cluster::execute",
-            arguments=[ObjectID(cluster_id), SuiString(input)],
+            arguments=[sui_scalars.ObjectID(cluster_id), sui_scalars.SuiString(input)],
         )
     except Exception as e:
         print(f"Error in execute_cluster: {e}")
@@ -197,7 +257,7 @@ def execute_cluster(
         return None
 
     result = txn.execute(gas_budget=gas_budget)
-
+    print(f"Execute Cluster started")
     if result.is_ok():
         if result.result_data.effects.status.status == "success":
             # just because it says "parsed_json" doesn't mean it's actually valid JSON apparently
@@ -217,7 +277,7 @@ def execute_cluster(
             print(f"Execute Cluster Transaction failed: {error_message}")
             return None
     else:
-        print(f"Failed to create ClusterExecution: {result.result_string}")
+        print(f"Failed to execute Cluster. Execution Result: {result.result_string}")
         return None
 
 
@@ -236,15 +296,20 @@ def get_cluster_execution_response(
     Returns:
         The response of the cluster execution, or a message indicating the reason for failure.
     """
+    print(f"get_cluster_execution_response: {execution_id}")
+    return "Did Not Execute"
+
     start_time = time.time()
     while time.time() - start_time < max_wait_time_s:
         try:
             # Create a GetObject builder
-            get_object_builder = GetObject(object_id=ObjectID(execution_id))
+            get_object_builder = sui_builders.GetObject(object_id=sui_scalars.ObjectID(execution_id))
 
+            print(f"get_object_builder: {get_object_builder}")
             # Execute the query
             result = client.execute(get_object_builder)
-
+            print (f"get_object_result: {result}")
+            print (f"result_string: {result.result_string}")
             if result.is_ok():
                 object_data = result.result_data
                 if object_data and object_data.content:

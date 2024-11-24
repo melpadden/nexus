@@ -145,6 +145,7 @@ def create_clusterai_tool(
 class BrowserTools:
     @staticmethod
     def scrape_and_summarize_website(url: str) -> str:
+        print(f"Scraping and summarizing website: {url}")
         browserless_api_key = os.getenv("BROWSERLESS_API_KEY")
         if not browserless_api_key:
             return "Error: BROWSERLESS_API_KEY is not set in the environment variables."

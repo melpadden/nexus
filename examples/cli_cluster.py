@@ -6,11 +6,8 @@ from nexus_sdk import (
     create_task,
     execute_cluster,
     get_cluster_execution_response,
+    attach_tool_to_task,
 )
-from pysui.sui.sui_txn.sync_transaction import SuiTransaction
-from pysui.sui.sui_types.scalars import ObjectID, SuiString
-from pysui.sui.sui_types.collections import SuiArray
-
 
 def get_user_input_for_cluster():
     cluster_name = input("Enter Cluster name: ")
@@ -121,7 +118,9 @@ class CliCluster:
     def setup_tools(self, cluster_id, cluster_owner_cap_id):
 
         for tool in self.tools:
-            self.attach_tool_to_task(
+            attach_tool_to_task(
+                self.client,
+                self.package_id,
                 cluster_id=cluster_id,
                 cluster_owner_cap_id=cluster_owner_cap_id,
                 task_name=tool["task_name"],
@@ -129,42 +128,42 @@ class CliCluster:
                 tool_args=tool["tool_args"],
             )
 
-    def attach_tool_to_task(
-        self,
-        cluster_id,
-        cluster_owner_cap_id,
-        task_name,
-        tool_name,
-        tool_args,
-    ):
-        txn = SuiTransaction(client=self.client)
+    # def attach_tool_to_task(
+    #     self,
+    #     cluster_id,
+    #     cluster_owner_cap_id,
+    #     task_name,
+    #     tool_name,
+    #     tool_args,
+    # ):
+    #     txn = SuiTransaction(client=self.client)
 
-        try:
-            result = txn.move_call(
-                target=f"{self.package_id}::cluster::attach_tool_to_task_entry",
-                arguments=[
-                    ObjectID(cluster_id),
-                    ObjectID(cluster_owner_cap_id),
-                    SuiString(task_name),
-                    SuiString(tool_name),
-                    SuiArray([SuiString(arg) for arg in tool_args]),
-                ],
-            )
-        except Exception as e:
-            print(f"Error in attach_task_to_tool: {e}")
-            return None
+    #     try:
+    #         result = txn.move_call(
+    #             target=f"{self.package_id}::cluster::attach_tool_to_task_entry",
+    #             arguments=[
+    #                 ObjectID(cluster_id),
+    #                 ObjectID(cluster_owner_cap_id),
+    #                 SuiString(task_name),
+    #                 SuiString(tool_name),
+    #                 SuiArray([SuiString(arg) for arg in tool_args]),
+    #             ],
+    #         )
+    #     except Exception as e:
+    #         print(f"Error in attach_task_to_tool: {e}")
+    #         return None
 
-        result = txn.execute(gas_budget=10000000)
+    #     result = txn.execute(gas_budget=10000000)
 
-        if result.is_ok():
-            if result.result_data.effects.status.status == "success":
-                print(f"Task attached to Tool")
-                return True
-            else:
-                error_message = result.result_data.effects.status.error
-                print(f"Transaction failed: {error_message}")
-                return None
-        return None
+    #     if result.is_ok():
+    #         if result.result_data.effects.status.status == "success":
+    #             print(f"Task attached to Tool")
+    #             return True
+    #         else:
+    #             error_message = result.result_data.effects.status.error
+    #             print(f"Transaction failed: {error_message}")
+    #             return None
+    #     return None
 
     def run(self, user_input):
         cluster_id, cluster_owner_cap_id = self.setup_cluster()

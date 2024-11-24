@@ -8,6 +8,7 @@ from .cluster import (
     create_task,
     execute_cluster,
     get_cluster_execution_response,
+    attach_tool_to_task,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "get_cluster_execution_response",
     "get_sui_client",
     "get_sui_client_with_airdrop",
+    "attach_tool_to_task"
 ]

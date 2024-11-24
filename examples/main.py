@@ -5,13 +5,13 @@ import json
 import argparse
 from pathlib import Path
 from colorama import init as colorama_init
-from nexus_sdk import get_sui_client
+import nexus_sdk as nexus_sdk
 from ig_post_planner import run_ig_post_planner_example
 from cli_cluster import run_cli_cluster_example
 from trip_planner import run_trip_planner_example
 from token_researcher import run_token_researcher_example
 from prompt_task import run_prompt_task_example
-from summary_website import run_site_summary_example
+from site_scraper import run_site_summary_example
 
 # We know that this script is located in the ./examples directory, so we go
 # one level up to get the root directory of the repository
@@ -118,7 +118,7 @@ def main():
     package_id, llama_id, llama_owner_cap_id, private_key = load_configuration()
     # Create the Sui client
 
-    client = get_sui_client(private_key, rpc_url=rpc_url, ws_url=ws_url)
+    client = nexus_sdk.get_sui_client(private_key, rpc_url=rpc_url, ws_url=ws_url)
     # Run the selected example
     try:
         print(f"\nRunning example: {example_name}\n")
