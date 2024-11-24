@@ -11,7 +11,7 @@ from cli_cluster import run_cli_cluster_example
 from trip_planner import run_trip_planner_example
 from token_researcher import run_token_researcher_example
 from prompt_task import run_prompt_task_example
-from summary_website import run_site_summary_example
+from site_scraper import run_site_summary_example
 
 # We know that this script is located in the ./examples directory, so we go
 # one level up to get the root directory of the repository

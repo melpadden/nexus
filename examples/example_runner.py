@@ -1,56 +1,50 @@
-import textwrap
-from colorama import Fore, Style
-from utils import paginate_output
-from nexus_sdk import (
-    create_cluster,
-    create_agent_for_cluster,
-    create_task,
-    execute_cluster,
-    get_cluster_execution_response,
-)
-
+import nexus_sdk as nexus
 from pysui.sui.sui_txn.sync_transaction import SuiTransaction
 from pysui.sui.sui_types.scalars import ObjectID, SuiString
 from pysui.sui.sui_types.collections import SuiArray
 
-class SiteScraper:
+
+class ExampleRunner:
     def __init__(
         self,
         client,
         package_id,
         model_id,
         model_owner_cap_id,
-        url,
+        agents = [],
+        tasks = [],
+        tools = [],
     ):
         self.client = client
         self.package_id = package_id
         self.model_id = model_id
         self.model_owner_cap_id = model_owner_cap_id
 
-        self.url = url
+        self.agent_configs = agents
+        self.task_configs = tasks
+        self.tool_configs = tools
+
+    def add_agent(self, agent_name, role, goal):
+        self.agent_configs.append((agent_name, role, goal))
+    def add_task(self, task_name, agent_id, description):
+        self.task_configs.append((task_name, agent_id, description))
+    def add_tool(self, task_name, tool_name, tool_args):
+        self.tool_configs.append((task_name, tool_name, tool_args))
 
     def setup_cluster(self):
         # Create a cluster (equivalent to Crew in CrewAI)
-        cluster_id, cluster_owner_cap_id = create_cluster(
+        cluster_id, cluster_owner_cap_id = nexus.create_cluster(
             self.client,
             self.package_id,
-            "Site Scraping Cluster",
-            "A cluster for scraping websites",
+            "Example Cluster",
+            "A cluster for running example Nexus agents",
         )
         return cluster_id, cluster_owner_cap_id
 
     def setup_agents(self, cluster_id, cluster_owner_cap_id):
-        # Create agents (assuming we have model_ids and model_owner_cap_ids)
-        agent_configs = [
-            (
-                "site_scraper",
-                "Site Scraping Agent",
-                "Scrape the selected website and summarize its content",
-            ),
-        ]
 
-        for agent_name, role, goal in agent_configs:
-            create_agent_for_cluster(
+        for agent_name, role, goal in self.agent_configs:
+            nexus.create_agent_for_cluster(
                 self.client,
                 self.package_id,
                 cluster_id,
@@ -64,19 +58,10 @@ class SiteScraper:
             )
 
     def setup_tasks(self, cluster_id, cluster_owner_cap_id):
-        tasks = [
-            (
-                "scrape_site",
-                "site_scraper",
-                f"""
-                Scrape and summarize the following site: {self.url}
-            """,
-            ),
-        ]
 
         task_ids = []
-        for task_name, agent_id, description in tasks:
-            task_id = create_task(
+        for task_name, agent_id, description in self.task_configs:
+            task_id = nexus.create_task(
                 self.client,
                 self.package_id,
                 cluster_id,
@@ -94,18 +79,7 @@ class SiteScraper:
 
 
     def setup_tools(self, cluster_id, cluster_owner_cap_id):
-        tools = [
-            (
-                "scrape_site",  # task_name
-                "browser", # tool_name
-                # tool_args
-                f"""
-                url: {self.url}
-            """,
-            ),
-
-        ]
-        for task_name, tool_name, tool_args in tools:
+        for task_name, tool_name, tool_args in self.tool_configs:
             self.attach_tool_to_task(
                 cluster_id=cluster_id,
                 cluster_owner_cap_id=cluster_owner_cap_id,
@@ -151,48 +125,21 @@ class SiteScraper:
                 return None
         return None
 
-    def run(self):
+    def execute(self, user_input):
         cluster_id, cluster_owner_cap_id = self.setup_cluster()
         self.setup_agents(cluster_id, cluster_owner_cap_id)
         self.setup_tasks(cluster_id, cluster_owner_cap_id)
         self.setup_tools(cluster_id, cluster_owner_cap_id)
 
-        execution_id = execute_cluster(
+        execution_id = nexus.execute_cluster(
             self.client,
             self.package_id,
             cluster_id,
-            f"""
-            Site Scraper: Url: {self.url}
-        """,
-        )
+            user_input)
 
         if execution_id is None:
             return "Cluster execution failed"
 
         print(f"Cluster execution started with ID: {execution_id}")
-        return get_cluster_execution_response(self.client, execution_id, 600)
-
-
-def run_site_summary_example(client, package_id, model_id, mode_owner_cap):
-    print(f"{Fore.CYAN}## Welcome to Site Scraper using Nexus{Style.RESET_ALL}")
-    print(f"{Fore.YELLOW}-------------------------------{Style.RESET_ALL}")
-
-    url = input(f"{Fore.GREEN}What is the URL to be summarized? {Style.RESET_ALL}")
-
-    runner = SiteScraper(
-        client,
-        package_id,
-        model_id,
-        mode_owner_cap,
-        url
-    )
-
-    print()
-    result = runner.run()
-
-    print(f"\n\n{Fore.CYAN}########################{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}## Results {Style.RESET_ALL}")
-    print(f"{Fore.CYAN}########################\n{Style.RESET_ALL}")
-
-    paginate_output(result)
+        return nexus.get_cluster_execution_response(self.client, execution_id, 600)
 

@@ -68,6 +68,7 @@ class CliCluster:
         tasks,
         tools,
     ):
+
         self.client = client
         self.package_id = package_id
         self.model_id = model_id
