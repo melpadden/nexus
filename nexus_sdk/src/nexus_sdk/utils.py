@@ -5,12 +5,22 @@ from pysui.sui.sui_clients.sync_client import SuiClient
 from pysui.abstracts.client_keypair import SignatureScheme
 
 
-# Returns Sui client with the given private key.
 def get_sui_client(
     private_key,
     rpc_url="http://localhost:9000",
     ws_url="ws://localhost:9000",
 ):
+    """
+    Returns a Sui client configured with the provided private key.
+
+    Args:
+        private_key (str): The private key used for signing transactions.
+        rpc_url (str, optional): The RPC URL for the Sui network. Defaults to "http://localhost:9000".
+        ws_url (str, optional): The WebSocket URL for the Sui network. Defaults to "ws://localhost:9000".
+
+    Returns:
+        SuiClient: An instance of SuiClient configured with the specified parameters.
+    """
     return SuiClient(
         SuiConfig.user_config(
             rpc_url=rpc_url,
@@ -20,7 +30,6 @@ def get_sui_client(
     )
 
 
-# Utility function to create a Sui client with airdrop (faucet)
 def get_sui_client_with_airdrop(
     rpc_url="http://localhost:9000",
     ws_url="ws://localhost:9000",
@@ -28,6 +37,22 @@ def get_sui_client_with_airdrop(
     keystore_path=Path("./sui.keystore"),
 ):
 
+    """
+    Creates a Sui client with airdrop (faucet) for the local development environment.
+
+    Args:
+        rpc_url (str, optional): The RPC URL for the Sui network. Defaults to "http://localhost:9000".
+        ws_url (str, optional): The WebSocket URL for the Sui network. Defaults to "ws://localhost:9000".
+        faucet_url (str, optional): The URL of the Sui faucet. Defaults to "http://localhost:5003/gas".
+        keystore_path (Path, optional): The path to the Sui keystore file. Defaults to "./sui.keystore".
+
+    Returns:
+        SuiClient: A Sui client with airdrop enabled.
+
+    Notes:
+        If the keystore file does not exist, a new wallet will be created and funded using the faucet.
+        If the keystore file exists, the first keypair will be used to create the client.
+    """
     if not keystore_path.exists():
         keystore_path.parent.mkdir(parents=True, exist_ok=True)
         keystore_path.touch()
